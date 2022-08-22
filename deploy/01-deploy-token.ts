@@ -8,9 +8,10 @@ const deployToken: DeployFunction = async function (hre: HardhatRuntimeEnvironme
     const { deploy, log } = deployments
     const { deployer } = await getNamedAccounts()
     const chainId: number = network.config.chainId!
+    const ownerAddress: string = process.env.OWNER_ADDRESS!
     const ourToken = await deploy("ToyToken", {
         from: deployer,
-        args: [INITIAL_SUPPLY],
+        args: [deployer, INITIAL_SUPPLY],
         log: true,
         // we need to wait if on a live network so we can verify properly
         waitConfirmations: networkConfig[network.name].blockConfirmations || 1,

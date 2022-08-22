@@ -15,8 +15,14 @@ describe("toyToken Unit Test", function () {
         toyToken = await ethers.getContract("ToyToken", deployer)
     })
 
+    it("Should have correct ownerAddress of token", async function () {
+        const tokenOwner = await toyToken.getOwner()
+        assert.equal(tokenOwner, deployer.address)
+    })
+
     it("Should have correct INITIAL_SUPPLY of token ", async function () {
         const totalSupply = await toyToken.totalSupply()
+        console.log("totalSupply", totalSupply.toString())
         assert.equal(totalSupply.toString(), INITIAL_SUPPLY)
     })
 
