@@ -15,19 +15,19 @@ export async function storeImages(imagesFilePath: string) {
         try {
             const response = await pinata.pinFileToIPFS(readableStreamForFile)
             responses.push(response)
-        } catch (err) {
-            console.log(err)
+        } catch (error) {
+            console.log(error)
         }
     }
     return { responses, files }
 }
 
-export async function storeTokenUriMetada(metadata: Object) {
+export async function storeTokenUriMetadata(metadata: Object) {
     try {
         const response = await pinata.pinJSONToIPFS(metadata)
         return response
-    } catch (err) {
-        console.log(err)
+    } catch (error) {
+        console.log(error)
     }
     return null
 }

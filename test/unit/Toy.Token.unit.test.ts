@@ -16,7 +16,7 @@ describe("toyToken Unit Test", function () {
     })
 
     it("Should have correct ownerAddress of token", async function () {
-        const tokenOwner = await toyToken.getOwner()
+        const tokenOwner = await toyToken.owner()
         assert.equal(tokenOwner, deployer.address)
     })
 

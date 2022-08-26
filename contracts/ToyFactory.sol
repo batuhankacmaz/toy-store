@@ -17,6 +17,8 @@ import "hardhat/console.sol";
 error ToyFactory__RangeOutOfBounds();
 error ToyFactory__NeedMoreETHSent();
 error ToyFactory__TransferFailed();
+error ToyFactory__AlreadyInitialized();
+error ToyFactory__TooHighFee();
 
 contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
     // Type Declarations
@@ -40,30 +42,31 @@ contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
     uint256 public s_tokenCounter;
     uint256 internal constant MAX_CHANCE_VALUE = 100;
     string[] internal s_toyTokenUris;
-    uint256 internal immutable i_mintFee;
+    uint256 internal s_mintFee;
+    bool private s_initialized;
 
     //Events
     event NftRequested(uint256 indexed requestId, address requester);
-    event NftMinted(Toy chosenToy, address minter);
+    event NftMinted(Toy indexed chosenToy, address minter);
 
     constructor(
         address vrfCoordinatorV2,
         uint64 subscriptionId,
         bytes32 gasLane, // keyHash
+        uint256 mintFee,
         uint32 callbackGasLimit,
-        string[3] memory toyTokenUris,
-        uint256 mintFee
+        string[3] memory toyTokenUris
     ) ERC721("Toy NFT", "TN") VRFConsumerBaseV2(vrfCoordinatorV2) {
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
         i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
-        s_toyTokenUris = toyTokenUris;
-        i_mintFee = mintFee;
+        s_mintFee = mintFee;
+        _initializeContract(toyTokenUris);
     }
 
     function requestNFT() public payable returns (uint256 requestId) {
-        if (msg.value < i_mintFee) {
+        if (msg.value < s_mintFee) {
             revert ToyFactory__NeedMoreETHSent();
         }
         requestId = i_vrfCoordinator.requestRandomWords(
@@ -79,13 +82,13 @@ contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
 
     function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
         address toyOwner = s_requestIdToSender[requestId];
-        uint256 newTokenId = s_tokenCounter;
         s_tokenCounter = s_tokenCounter + 1;
+        uint256 newItemId = s_tokenCounter;
         uint256 moddedRng = randomWords[0] % MAX_CHANCE_VALUE;
-
         Toy chosenToy = getToyFromModdedRng(moddedRng);
-        _safeMint(toyOwner, newTokenId);
-        _setTokenURI(newTokenId, s_toyTokenUris[uint256(chosenToy)]);
+        _safeMint(toyOwner, newItemId);
+        _setTokenURI(newItemId, s_toyTokenUris[uint256(chosenToy)]);
+        console.log("s_toyTokenUris[uint256(chosenToy)]", s_toyTokenUris[uint256(chosenToy)]);
         emit NftMinted(chosenToy, toyOwner);
     }
 
@@ -97,14 +100,29 @@ contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
         }
     }
 
+    function changeNFTFee(uint256 newFee) public onlyOwner {
+        if (newFee > 1 * 10**17) {
+            revert ToyFactory__TooHighFee();
+        }
+        s_mintFee = newFee;
+    }
+
+    function _initializeContract(string[3] memory toyTokenUris) private {
+        if (s_initialized) {
+            revert ToyFactory__AlreadyInitialized();
+        }
+        s_toyTokenUris = toyTokenUris;
+        s_initialized = true;
+    }
+
     function getToyFromModdedRng(uint256 moddedRng) public pure returns (Toy) {
         uint256 cumulativeSum = 0;
-        uint256[3] memory chanceArray = getChanceArray();
-        for (uint256 i = 0; i < chanceArray.length; i++) {
-            if (moddedRng >= cumulativeSum && moddedRng < cumulativeSum + chanceArray[i]) {
+        uint256[3] memory chanceArracy = getChanceArray();
+        for (uint256 i = 0; i < chanceArracy.length; i++) {
+            if (moddedRng >= cumulativeSum && moddedRng < cumulativeSum + chanceArracy[i]) {
                 return Toy(i);
             }
-            cumulativeSum += chanceArray[i];
+            cumulativeSum = cumulativeSum + chanceArracy[i];
         }
         revert ToyFactory__RangeOutOfBounds();
     }
@@ -114,7 +132,7 @@ contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
     }
 
     function getMintFee() public view returns (uint256) {
-        return i_mintFee;
+        return s_mintFee;
     }
 
     function getToyTokenUris(uint256 index) public view returns (string memory) {
@@ -125,5 +143,7 @@ contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
         return s_tokenCounter;
     }
 
-    function tokenURI(uint256) public view override returns (string memory) {}
+    function getInitialized() public view returns (bool) {
+        return s_initialized;
+    }
 }
