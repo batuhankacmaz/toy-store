@@ -20,18 +20,19 @@ import { ToyFactory, VRFCoordinatorV2Mock } from "../../typechain-types"
               it("sets starting values correctly", async function () {
                   const toyTokenUriZero = await toyFactory.getToyTokenUris(0)
                   const isInitialized = await toyFactory.getInitialized()
-                  assert(toyTokenUriZero.includes("https://ipfs.io/"))
+                  assert(toyTokenUriZero.includes("ipfs://"))
                   assert.equal(isInitialized, true)
               })
           })
 
           describe("requestNft", function () {
-              it("fails if payment isn't sent with the request", async function () {
+              /*  it("fails if payment isn't sent with the request", async function () {
                   await expect(toyFactory.requestNFT()).to.be.revertedWith("NeedMoreETHSent")
-              })
+              }) */
               it("emits and event and kicks off a random word request", async function () {
-                  const fee = await toyFactory.getMintFee()
-                  await expect(toyFactory.requestNFT({ value: fee.toString() })).to.emit(
+                  //const fee = await toyFactory.getMintFee()
+                  await expect(toyFactory.requestNFT()).to.emit(
+                      // {value:fee}
                       toyFactory,
                       "NftRequested"
                   )
@@ -45,7 +46,7 @@ import { ToyFactory, VRFCoordinatorV2Mock } from "../../typechain-types"
                               const tokenUri = await toyFactory.getToyTokenUris(0)
                               const tokenCounter = await toyFactory.getTokenCounter()
                               console.log("tokenUri", tokenUri)
-                              assert.equal(tokenUri.toString().includes("https://ipfs.io/"), true)
+                              assert.equal(tokenUri.toString().includes("ipfs://"), true)
                               assert.equal(tokenCounter.toString(), "1")
                               resolve()
                           } catch (e) {
@@ -54,10 +55,7 @@ import { ToyFactory, VRFCoordinatorV2Mock } from "../../typechain-types"
                           }
                       })
                       try {
-                          const fee = await toyFactory.getMintFee()
-                          const requestNftResponse = await toyFactory.requestNFT({
-                              value: fee.toString(),
-                          })
+                          const requestNftResponse = await toyFactory.requestNFT()
                           const requestNftReceipt = await requestNftResponse.wait(1)
                           await vrfCoordinatorV2Mock.fulfillRandomWords(
                               requestNftReceipt.events![1].args!.requestId,

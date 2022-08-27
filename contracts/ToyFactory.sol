@@ -20,7 +20,7 @@ error ToyFactory__TransferFailed();
 error ToyFactory__AlreadyInitialized();
 error ToyFactory__TooHighFee();
 
-contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
+contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2 {
     // Type Declarations
     enum Toy {
         HULK,
@@ -42,7 +42,6 @@ contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
     uint256 public s_tokenCounter;
     uint256 internal constant MAX_CHANCE_VALUE = 100;
     string[] internal s_toyTokenUris;
-    uint256 internal s_mintFee;
     bool private s_initialized;
 
     //Events
@@ -53,7 +52,6 @@ contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
         address vrfCoordinatorV2,
         uint64 subscriptionId,
         bytes32 gasLane, // keyHash
-        uint256 mintFee,
         uint32 callbackGasLimit,
         string[3] memory toyTokenUris
     ) ERC721("Toy NFT", "TN") VRFConsumerBaseV2(vrfCoordinatorV2) {
@@ -61,14 +59,10 @@ contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
         i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
-        s_mintFee = mintFee;
         _initializeContract(toyTokenUris);
     }
 
-    function requestNFT() public payable returns (uint256 requestId) {
-        if (msg.value < s_mintFee) {
-            revert ToyFactory__NeedMoreETHSent();
-        }
+    function requestNFT() public returns (uint256 requestId) {
         requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
             i_subscriptionId,
@@ -90,21 +84,6 @@ contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
         _setTokenURI(newItemId, s_toyTokenUris[uint256(chosenToy)]);
         console.log("s_toyTokenUris[uint256(chosenToy)]", s_toyTokenUris[uint256(chosenToy)]);
         emit NftMinted(chosenToy, toyOwner);
-    }
-
-    function withdraw() public onlyOwner {
-        uint256 amount = address(this).balance;
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        if (!success) {
-            revert ToyFactory__TransferFailed();
-        }
-    }
-
-    function changeNFTFee(uint256 newFee) public onlyOwner {
-        if (newFee > 1 * 10**17) {
-            revert ToyFactory__TooHighFee();
-        }
-        s_mintFee = newFee;
     }
 
     function _initializeContract(string[3] memory toyTokenUris) private {
@@ -129,10 +108,6 @@ contract ToyFactory is ERC721URIStorage, VRFConsumerBaseV2, Ownable {
 
     function getChanceArray() public pure returns (uint256[3] memory) {
         return [10, 40, MAX_CHANCE_VALUE];
-    }
-
-    function getMintFee() public view returns (uint256) {
-        return s_mintFee;
     }
 
     function getToyTokenUris(uint256 index) public view returns (string memory) {

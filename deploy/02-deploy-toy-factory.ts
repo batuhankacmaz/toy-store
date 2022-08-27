@@ -61,10 +61,10 @@ const deployToyFactory: DeployFunction = async function (hre: HardhatRuntimeEnvi
         vrfCoordinatorV2Address,
         subscriptionId,
         networkConfig[chainId]["gasLane"],
-        networkConfig[chainId]["mintFee"],
         networkConfig[chainId]["callbackGasLimit"],
         tokenUris,
     ]
+    //networkConfig[chainId]["mintFee"],
     const toyFactory = await deploy("ToyFactory", {
         from: deployer,
         args: args,
