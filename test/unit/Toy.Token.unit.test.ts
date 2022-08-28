@@ -14,6 +14,20 @@ describe("toyToken Unit Test", function () {
         await deployments.fixture("tokens")
         toyToken = await ethers.getContract("ToyToken", deployer)
     })
+    describe("createToyToken", function () {
+        it("Should create tokens", async function () {
+            const toyToken1 = toyToken.connect(user1)
+            const beforeCreateTokensBalance = await toyToken1.balanceOf(user1.address)
+            const createTxResponse = await toyToken1.createToyToken()
+            await createTxResponse.wait(1)
+            const afterCreateTokensBalance = await toyToken1.balanceOf(user1.address)
+            const createTokenAmount = await toyToken1.getTokenAmount()
+            const getTokenCreater = await toyToken1.getTokenCreaters(user1.address)
+            assert.equal(beforeCreateTokensBalance.toString(), "0")
+            assert.equal(afterCreateTokensBalance.toString(), createTokenAmount.toString())
+            assert.equal(afterCreateTokensBalance.toString(), getTokenCreater.toString())
+        })
+    })
 
     it("Should have correct ownerAddress of token", async function () {
         const tokenOwner = await toyToken.owner()
