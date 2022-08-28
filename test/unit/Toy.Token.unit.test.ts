@@ -11,7 +11,7 @@ describe("toyToken Unit Test", function () {
         deployer = accounts[0]
         user1 = accounts[1]
 
-        await deployments.fixture("all")
+        await deployments.fixture("tokens")
         toyToken = await ethers.getContract("ToyToken", deployer)
     })
 

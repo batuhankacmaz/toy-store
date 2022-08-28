@@ -15,6 +15,7 @@ contract ToyManagment is ToyFactory, Ownable {
     using SafeERC20 for IERC20;
 
     //Managment Variables
+    uint256 private s_accumulatedAmount;
     address private immutable i_toyTokenAddress;
     uint256 private s_mintFee;
     mapping(address => uint256) private s_totalSentAmount;
@@ -47,12 +48,7 @@ contract ToyManagment is ToyFactory, Ownable {
         _requestPermission(requester, tokenAmount);
         requestNFT();
         s_totalSentAmount[msg.sender] += tokenAmount;
-    }
-
-    function _requestPermission(address sender, uint256 amount) private {
-        IERC20 toyTokenContract = IERC20(i_toyTokenAddress);
-        toyTokenContract.safeTransferFrom(sender, address(this), amount);
-        emit TokensReceived(sender, amount);
+        s_accumulatedAmount += tokenAmount;
     }
 
     function withdraw() external onlyOwner {
@@ -61,10 +57,16 @@ contract ToyManagment is ToyFactory, Ownable {
         }
         IERC20 toyTokenContract = IERC20(i_toyTokenAddress);
         uint256 amount = toyTokenContract.balanceOf(address(this));
-        address sender = address(this);
         address owner = getOwner();
-        toyTokenContract.safeTransferFrom(sender, owner, amount);
+        toyTokenContract.safeTransfer(owner, amount);
+        s_accumulatedAmount = 0;
         emit TokensWithdrawed(owner, amount);
+    }
+
+    function _requestPermission(address sender, uint256 amount) private {
+        IERC20 toyTokenContract = IERC20(i_toyTokenAddress);
+        toyTokenContract.safeTransferFrom(sender, address(this), amount);
+        emit TokensReceived(sender, amount);
     }
 
     function setNFTFee(uint256 newFee) external onlyOwner {
@@ -89,5 +91,9 @@ contract ToyManagment is ToyFactory, Ownable {
 
     function getTotalSenderAmount(address sender) external view returns (uint256) {
         return s_totalSentAmount[sender];
+    }
+
+    function getAccumulatedAmount() external view returns (uint256) {
+        return s_accumulatedAmount;
     }
 }

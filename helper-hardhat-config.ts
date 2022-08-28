@@ -8,6 +8,7 @@ export interface networkConfigItem {
     gasLane?: string
     ethUsdPriceFeed?: string
     mintFee?: string
+    toyTokenAddress?: string
 }
 
 export interface networkConfigInfo {
@@ -32,6 +33,7 @@ export const networkConfig: networkConfigInfo = {
         callbackGasLimit: "500000", // 500,000 gas
         mintFee: "10000000000000000", // 0.01 ETH
         subscriptionId: "7795", // add your ID here!
+        toyTokenAddress: "0x",
     },
 }
 export const DECIMALS = "18"
